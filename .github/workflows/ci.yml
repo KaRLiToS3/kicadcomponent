@@ -25,10 +25,15 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      # En un venv y no con --system: setup-uv instala un Python gestionado por
+      # uv, que no es el del sistema, y en macOS el de Homebrew esta ademas
+      # marcado como externally managed.
       - name: Instalar
-        run: uv pip install --system .
+        run: |
+          uv venv --python ${{ matrix.python }}
+          uv pip install .
 
       - name: Arrancar
         run: |
-          kicadcomponent --version
-          kicadcomponent --help
+          uv run --no-sync kicadcomponent --version
+          uv run --no-sync kicadcomponent --help
