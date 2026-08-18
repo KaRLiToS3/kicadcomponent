@@ -1,0 +1,75 @@
+# Publica en PyPI al empujar un tag vX.Y.Z, usando Trusted Publishing:
+# PyPI confia en este workflow via OIDC, asi que no hay ningun token guardado.
+#
+# Antes del primer envio hay que dar de alta un "pending publisher" en
+# https://pypi.org/manage/account/publishing/ con estos datos exactos:
+#     PyPI Project Name: kicadcomponent
+#     Owner:             KaRLiToS3
+#     Repository name:   kicadcomponent
+#     Workflow name:     release.yml
+#     Environment name:  pypi
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Construir y comprobar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+
+      - name: Construir sdist y wheel
+        run: uv build
+
+      - name: Comprobar la metadata
+        run: uvx twine check dist/*
+
+      # Una version subida a PyPI es inmutable, asi que el wheel se prueba
+      # instalado en limpio antes de publicarlo, y en la version minima
+      # que declara soportar.
+      - name: Probar el wheel instalado
+        run: |
+          uv run --isolated --python 3.9 --with ./dist/*.whl \
+            kicadcomponent --version
+          uv run --isolated --python 3.9 --with ./dist/*.whl \
+            kicadcomponent --help
+
+      - name: Comprobar que el tag coincide con la version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF#refs/tags/v}"
+          version="$(uv run --isolated --with ./dist/*.whl \
+            python -c 'import kicadcomponent; print(kicadcomponent.__version__)')"
+          if [ "$tag" != "$version" ]; then
+            echo "El tag v$tag no coincide con la version $version del paquete" >&2
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publicar en PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/kicadcomponent
+    permissions:
+      id-token: write # imprescindible para Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
