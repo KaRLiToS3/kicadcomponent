@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kicadcomponent"
+version = "0.1.0"
+description = "Import and remove LCSC/EasyEDA components in a KiCad project, keeping symbol, footprint and 3D model in sync"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Carlos", email = "capelosmor@gmail.com" }]
+keywords = ["kicad", "easyeda", "lcsc", "jlcpcb", "electronics", "pcb"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Manufacturing",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = ["easyeda2kicad>=1.0.1"]
+
+[project.urls]
+Homepage = "https://github.com/KaRLiToS3/kicadcomponent"
+
+[project.scripts]
+kicadcomponent = "kicadcomponent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kicadcomponent"]
