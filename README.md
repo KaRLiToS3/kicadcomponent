@@ -57,6 +57,14 @@ en Linux, macOS y Windows.
 
 ## Uso
 
+La ubicación que se busca por defecto para el nomrbe de la librería es `easyeda2kicad`, esto es porque si hay otras librerías, esta tiene preferencia, y si no existe se le tiene que indicar con la opción `--nickname`.
+
+**IMPORTANTE** Las librerías deben estar en las rutas de kicad, si no no serán detectadas.
+
+![alt text](image.png)
+
+Estando en la ubicación del proyecto (donde esté el `.kicad_pro`), con `--project` se pueden usar estos comandos.
+
 ```
 kicadcomponent [add|remove|rm|list|ls|where] [opciones]
 ```
