@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kicadcomponent"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Import and remove LCSC/EasyEDA components in a KiCad project, keeping symbol, footprint and 3D model in sync"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -37,3 +37,14 @@ kicadcomponent = "kicadcomponent.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kicadcomponent"]
+
+# La version vive solo en src/kicadcomponent/__init__.py, para que el
+# --version del CLI y la del paquete publicado no puedan desincronizarse.
+[tool.hatch.version]
+path = "src/kicadcomponent/__init__.py"
+
+[dependency-groups]
+dev = ["pytest>=7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

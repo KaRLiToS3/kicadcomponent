@@ -9,9 +9,9 @@ Lo que añade `kicadcomponent` es lo que le falta: **saber deshacerla**, y no
 tener que decirle a mano dónde está tu proyecto.
 
 ```console
-$ kicadcomponent add C71459
+$ kicadcomponent add C352847
 $ kicadcomponent list
-$ kicadcomponent remove C71459
+$ kicadcomponent remove C352847
 ```
 
 ## El problema que resuelve
@@ -19,13 +19,14 @@ $ kicadcomponent remove C71459
 Un componente se reparte en tres ficheros y **ninguno se llama como el LCSC ID**:
 
 ```
-C71459  →  símbolo    MPU-9250
-        →  footprint  QFN-24_L3.0-W3.0-P0.40-BL-EP
-        →  modelo 3D  QFN-24_L3.0-W3.0-H0.9-P0.40-BL-EP   (.wrl + .step)
+C352847  →  símbolo    LM324N_NOPB
+         →  footprint  PDIP-14_L19.7-W6.6-P2.54-LS8.3-BL
+         →  modelo 3D  PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL   (.wrl + .step)
 ```
 
-Borrarlo a mano implica encontrar los tres nombres y acordarse de que puede
-haber otros componentes usando el mismo footprint.
+El nombre del modelo 3D ni siquiera coincide con el del footprint. Borrarlo a
+mano implica encontrar los tres y acordarse de que puede haber otros componentes
+usando el mismo footprint.
 
 No hace falta llevar una base de datos aparte, porque **la cadena entera ya está
 escrita en los propios ficheros de la librería** — un índice paralelo sólo
@@ -33,89 +34,147 @@ podría desincronizarse:
 
 | Relación | Dónde está guardada |
 |---|---|
-| LCSC → símbolo | `easyeda2kicad.kicad_sym` → `(property "LCSC Part" "C71459")` |
-| símbolo → footprint | el mismo bloque → `(property "Footprint" "easyeda2kicad:QFN-24_…")` |
+| LCSC → símbolo | `easyeda2kicad.kicad_sym` → `(property "LCSC Part" "C352847")` |
+| símbolo → footprint | el mismo bloque → `(property "Footprint" "easyeda2kicad:PDIP-14_…")` |
 | footprint → modelo 3D | `easyeda2kicad.pretty/<fp>.kicad_mod` → `(model "…/MODELO.wrl")` |
 
 ## Instalación
 
-Como es una herramienta de línea de comandos, mejor en un entorno aislado:
+`kicadcomponent` es una herramienta de línea de comandos, así que lo suyo es
+instalarla en su propio entorno aislado y que quede en el `PATH`.
 
 ```console
-$ uv tool install kicadcomponent      # o bien
-$ pipx install kicadcomponent         # o bien
-$ pip install kicadcomponent
+$ python -m venv .venv
+$ pip install kicadcomponent && kicadcomponent --version
 ```
 
-Requiere Python ≥ 3.9 y nada más: `easyeda2kicad` se instala como dependencia y
-no tiene ninguna suya. Funciona igual en Linux, macOS y Windows.
+### Requisitos
+
+Python ≥ 3.9 y nada más. `easyeda2kicad` entra como dependencia, así que **no
+hay que instalarlo aparte ni activar ningún entorno** para usarlo:
+`kicadcomponent` lo llama importándolo, no lanzando otro proceso. Funciona igual
+en Linux, macOS y Windows.
 
 ## Uso
 
-```console
-$ kicadcomponent add C71459            # símbolo + footprint + 3D
-$ kicadcomponent add C71459 C22787     # varios de una vez
-$ kicadcomponent add --3d C71459       # sólo el modelo 3D
-$ kicadcomponent C71459                # atajo: equivale a "add"
-
-$ kicadcomponent list                  # inventario de la librería
-$ kicadcomponent where                 # qué rutas está usando
-
-$ kicadcomponent remove C71459         # por LCSC ID
-$ kicadcomponent remove MPU-9250       # o por nombre de símbolo
-$ kicadcomponent remove -n C71459      # --dry-run: enseña el plan y sale
-$ kicadcomponent remove -y C71459      # sin preguntar
+```
+kicadcomponent [add|remove|rm|list|ls|where] [opciones]
 ```
 
-Antes de borrar, enseña el plan y pide confirmación:
+### Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `kicadcomponent` | Imprime la ayuda |
+| `kicadcomponent --help` | Ayuda general |
+| `kicadcomponent --version` | Versión instalada |
+| `kicadcomponent C352847` | Lo mismo: `add` es el subcomando por defecto, descarga todo |
+| `kicadcomponent add --help` | Ayuda de un subcomando (igual para `remove`, `list`, `where`) |
+| `kicadcomponent add C352847` | Importa el componente entero: símbolo + footprint + modelo 3D |
+| `kicadcomponent add C352847 C25804` | Varios de una vez; sigue con los demás aunque uno falle |
+| `kicadcomponent add --symbol C352847` | Sólo el símbolo |
+| `kicadcomponent add --footprint C352847` | Sólo el footprint |
+| `kicadcomponent add --3d C352847` | Sólo el modelo 3D |
+| `kicadcomponent add --mode symbol C352847` | Forma larga de las tres anteriores: `full`, `symbol`, `footprint`, `3d` |
+| `kicadcomponent add --no-overwrite C352847` | No reimporta encima de lo que ya exista |
+| `kicadcomponent list` | Inventario de la librería, en una tabla |
+| `kicadcomponent ls` | Alias de `list` |
+| `kicadcomponent remove C352847` | Borra la cadena entera: enseña el plan y pide confirmación |
+| `kicadcomponent remove LM324N_NOPB` | También busca por nombre de símbolo, exacto o parcial |
+| `kicadcomponent rm C352847` | Alias de `remove` |
+| `kicadcomponent rm -n C352847` | `--dry-run`: enseña el plan y sale sin tocar nada |
+| `kicadcomponent rm -y C352847` | `--yes`: no pregunta, para guiones |
+| `kicadcomponent where` | Enseña qué rutas está usando |
+
+### Opciones comunes
+
+Las aceptan los cuatro subcomandos, y van **después** del subcomando:
+
+| Opción | Qué hace |
+|---|---|
+| `--project DIR` | Carpeta que contiene el `.kicad_pro`, si no estás dentro o hay varias |
+| `--lib DIR` | Carpeta de la librería, saltándose las lib-tables |
+| `--nickname NOMBRE` | Nombre de la librería, si no es `easyeda2kicad` |
+
+Tres detalles que evitan sorpresas:
+
+- Las opciones comunes van **después** del subcomando: `kicadcomponent list --project ~/x`, no al revés.
+- Con el atajo sin `add`, las opciones van **después** del LCSC ID: `kicadcomponent C352847 --3d`.
+- En la **primera** importación de un proyecto que aún no declara la librería hay que indicar dónde va con `--lib`.
+
+### Ejemplo
 
 ```console
-$ kicadcomponent remove C71459
-Se va a borrar de /home/carlos/proyecto/lib/easyeda2kicad:
-  simbolo    MPU-9250  (C71459)
-  fichero    …/easyeda2kicad.pretty/QFN-24_L3.0-W3.0-P0.40-BL-EP.kicad_mod
-  fichero    …/easyeda2kicad.3dshapes/QFN-24_L3.0-W3.0-H0.9-P0.40-BL-EP.wrl
-  fichero    …/easyeda2kicad.3dshapes/QFN-24_L3.0-W3.0-H0.9-P0.40-BL-EP.step
-Confirmas el borrado? [y/N]
+$ cd ~/Instrumentacion/CircuitoV5
+$ kicadcomponent where
+  proyecto   /home/carlos/Instrumentacion/CircuitoV5
+  nickname   easyeda2kicad
+  simbolos   /home/carlos/Instrumentacion/lib/easyeda2kicad/easyeda2kicad.kicad_sym
+  footprints /home/carlos/Instrumentacion/lib/easyeda2kicad/easyeda2kicad.pretty
+  modelos 3D /home/carlos/Instrumentacion/lib/easyeda2kicad/easyeda2kicad.3dshapes
+
+$ kicadcomponent list
+LCSC     SIMBOLO         FOOTPRINT                          MODELO 3D
+-------  --------------  ---------------------------------  --------------------------------------
+C25744   0402WGF1002TCE  R0402                              R0402_L1.0-W0.5-H0.4
+C25804   0603WAF1002T5E  R0603                              R0603
+C352847  LM324N_NOPB     PDIP-14_L19.7-W6.6-P2.54-LS8.3-BL  PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL
+
+3 componentes en /home/carlos/Instrumentacion/lib/easyeda2kicad
+
+$ kicadcomponent remove C352847
+Se va a borrar de /home/carlos/Instrumentacion/lib/easyeda2kicad:
+  simbolo    LM324N_NOPB  (C352847)
+  fichero    …/easyeda2kicad.pretty/PDIP-14_L19.7-W6.6-P2.54-LS8.3-BL.kicad_mod
+  fichero    …/easyeda2kicad.3dshapes/PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL.wrl
+  fichero    …/easyeda2kicad.3dshapes/PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL.step
+Confirmas el borrado? [y/N] y
+  simbolo borrado (copia en …/easyeda2kicad.kicad_sym.bak)
+  borrado …/easyeda2kicad.pretty/PDIP-14_L19.7-W6.6-P2.54-LS8.3-BL.kicad_mod
+  borrado …/easyeda2kicad.3dshapes/PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL.wrl
+  borrado …/easyeda2kicad.3dshapes/PDIP-14_L19.7-W6.6-H5.1-P2.54-LS8.3-BL.step
+Refresca las librerias en KiCad para que deje de verlo.
 ```
 
-## Cómo encuentra tu proyecto
+Nunca borra lo que siga en uso. Si el footprint o el modelo 3D los comparte otro
+componente, se quedan y se explica por qué:
 
-No hay rutas que configurar. `kicadcomponent` sube desde el directorio actual
-hasta dar con un `.kicad_pro`, y a partir de ahí lee `sym-lib-table` y
-`fp-lib-table`, que es donde KiCad guarda de verdad dónde vive cada librería.
+```console
+$ kicadcomponent rm -n C25804
+Se va a borrar de /home/carlos/Instrumentacion/lib/easyeda2kicad:
+  simbolo    0603WAF1002T5E  (C25804)
+  fichero    (ninguno)
+  nota: el footprint se conserva, lo usan tambien: 0603WAF1001T5E
+  nota: el modelo 3D se conserva, lo sigue usando R0603
+(--dry-run: no se ha tocado nada)
+```
+
+Además, el `.kicad_sym` se copia a `.kicad_sym.bak` antes de cada borrado.
+
+## Cómo encuentra el proyecto y la librería
+
+No hay rutas que configurar:
+
+1. **El proyecto.** Sube desde el directorio actual hasta dar con un
+   `.kicad_pro`. Si no aparece por encima, lo busca por debajo (hasta tres
+   niveles), porque es habitual estar en la raíz del repositorio con los
+   proyectos en subcarpetas. Si hay más de uno, se planta y pide un `--project`.
+2. **La librería.** A partir del proyecto lee `sym-lib-table` y `fp-lib-table`,
+   que es donde KiCad guarda de verdad dónde vive cada librería, y resuelve el
+   `${KIPRJMOD}` (y cualquier otra variable de entorno) de la URI. Si sólo una de
+   las dos tablas la declara, la otra se deduce a su lado; los modelos 3D se
+   buscan siempre en el `.3dshapes` junto al `.pretty`.
 
 Eso importa porque **la librería no tiene por qué estar dentro de la carpeta del
 proyecto**. Este montaje, con dos revisiones compartiendo una librería, se
-resuelve solo:
+resuelve solo desde cualquiera de las tres carpetas:
 
 ```
-proyecto/
+Instrumentacion/
 ├── lib/easyeda2kicad/        ← la librería, compartida
-├── v1/esp32.kicad_pro        ← ${KIPRJMOD}/../lib/easyeda2kicad/…
-└── v2/esp32.kicad_pro
+├── v1/circuito.kicad_pro     ← ${KIPRJMOD}/../lib/easyeda2kicad/…
+└── v2/circuito.kicad_pro
 ```
-
-Si hace falta, se puede forzar:
-
-```console
-$ kicadcomponent --project ~/proyecto/v2 list
-$ kicadcomponent --lib ~/proyecto/lib/easyeda2kicad list   # sin lib-tables
-$ kicadcomponent --nickname mis-componentes list           # otro nombre
-```
-
-## Qué nunca borra
-
-- **Footprints compartidos.** Si `R0603` lo usan dos símbolos, al quitar uno se
-  borra sólo su símbolo y se avisa de quién lo sigue usando.
-- **Modelos 3D compartidos**, ni los de un footprint que se conserva.
-- **Footprints de otras librerías** (`Device:R` y compañía).
-
-Además, el `.kicad_sym` se copia a `.kicad_sym.bak` antes de cada borrado. El
-símbolo se recorta por su posición exacta en el fichero, así que el resto queda
-byte a byte igual.
-
-Tras borrar hay que **refrescar las librerías en KiCad** para que deje de verlo.
 
 ## Detalles de implementación
 

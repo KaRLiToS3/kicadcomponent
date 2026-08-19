@@ -31,7 +31,10 @@ jobs:
       - name: Instalar
         run: |
           uv venv --python ${{ matrix.python }}
-          uv pip install .
+          uv pip install . pytest
+
+      - name: Tests
+        run: uv run --no-sync pytest
 
       - name: Arrancar
         run: |
